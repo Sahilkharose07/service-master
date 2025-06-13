@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "326227286943",
+    "project_id": "servicenotification-c3e4e",
+    "storage_bucket": "servicenotification-c3e4e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326227286943:android:f26118d718a32284e8bbaa",
+        "android_client_info": {
+          "package_name": "com.service.servicevale"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACZmPHzb2X4Ftz32_UhDB9GTI8acoiIeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
