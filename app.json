@@ -16,10 +16,10 @@
         "foregroundImage": "./assets/images/logo.png"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.markwatson.service_vale",
+      "package": "com.service.servicevale",
 
       
-      "googleServicesFile": "./google-services.",
+      "googleServicesFile": "./android/app/scr/google-services.json",
 
       "intentFilters": [
         {

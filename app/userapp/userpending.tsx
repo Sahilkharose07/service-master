@@ -7,7 +7,8 @@ import { ID, Query } from 'appwrite';
 import { styles } from '../../constants/userapp/PendingServicesScreenuser.styles';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, isSameDay } from 'date-fns';
-import { Linking } from 'react-native';
+import PushNotification from 'react-native-push-notification';
+
 
 const DATABASE_ID = '681c428b00159abb5e8b';
 const COLLECTION_ID = '681d92600018a87c1478';
@@ -97,6 +98,8 @@ const PendingServicesScreenUser = () => {
       setLoading(false);
     }
   };
+
+  
 
   useEffect(() => {
     fetchServices();
@@ -196,16 +199,29 @@ const PendingServicesScreenUser = () => {
                 id,
                 { status: 'completed' }
               );
+
               const completedService = services.find(service => service.id === id);
               if (!completedService) return;
+
               try {
                 await createNotification(
-                  `Service completed\n Engineer : ${completedService.serviceBoy}\n Service : ${completedService.serviceType}\n Customer : ${completedService.clientName}\n Date : ${completedService.serviceDate} at ${completedService.serviceTime}`,
+                  `Service completed\n Engineer: ${completedService.serviceBoy}\n Service: ${completedService.serviceType}\n Customer: ${completedService.clientName}\n Date: ${completedService.serviceDate} at ${completedService.serviceTime}`,
                   completedService.serviceboyEmail
                 );
               } catch (notificationError) {
                 console.warn('Notification failed (service still completed):', notificationError);
               }
+
+
+              PushNotification.localNotification({
+                channelId: 'default-channel-id', 
+                title: 'Service Completed',
+                message: 'A service has been completed. Tap to view in admin panel.',
+                playSound: true,
+                soundName: 'default',
+                vibrate: true,
+              });
+
               setServices(prev => prev.filter(service => service.id !== id));
               setAllServices(prev => prev.filter(service => service.id !== id));
               router.push({
@@ -224,27 +240,6 @@ const PendingServicesScreenUser = () => {
     );
   };
 
-  const sendManualWhatsAppNotification = (service: Service) => {
-    const message = `Dear ${service.clientName},\n\n` +
-      `Your ${service.serviceType} service is scheduled for:\n` +
-      `📅 Date: ${service.serviceDate}\n` +
-      `⏰ Time: ${service.serviceTime}\n\n` +
-      `Service Provider Details:\n` +
-      `👨‍🔧 Name: ${service.serviceBoy}\n` +
-      `📞 Contact: ${service.serviceboyContact}\n\n` +
-      `Service Amount: ₹${service.amount}\n\n` +
-      `Please be ready for the service. For any queries, contact us.\n\n` +
-      `Thank you for choosing our service!`;
-    const phone = service.phone.replace(/\D/g, '');
-    const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
-    Linking.canOpenURL(url).then(supported => {
-      if (supported) {
-        Linking.openURL(url);
-      } else {
-        Alert.alert('Error', 'WhatsApp is not installed');
-      }
-    });
-  };
 
   const renderServiceItem = ({ item }: { item: Service }) => (
     <View style={styles.serviceCard}>
