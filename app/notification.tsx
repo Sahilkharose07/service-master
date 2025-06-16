@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import {
   View,
   Text,
@@ -27,44 +28,71 @@ const AdminNotificationPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [previousCount, setPreviousCount] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     configurePushNotifications();
-
-    const loadSound = async () => {
-      const { sound } = await Audio.Sound.createAsync(
-        require('../assets/sounds/notification.mp3')
-      );
-      soundRef.current = sound;
-    };
-
     loadSound();
+    fetchNotifications();
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Start polling every 15 seconds
+    intervalRef.current = setInterval(() => {
+      if (appState.current === 'active') {
+        fetchNotifications();
+      }
+    }, 3000);
 
     return () => {
       if (soundRef.current) {
         soundRef.current.unloadAsync();
       }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      subscription.remove();
     };
   }, []);
 
+  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    appState.current = nextAppState;
+  };
 
+  const loadSound = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        require('../assets/notification.mp3') 
+      );
+      soundRef.current = sound;
+    } catch (error) {
+      console.error('Failed to load sound:', error);
+    }
+  };
 
-  useEffect(() => {
-    configurePushNotifications();
-  }, []);
+  const playNotificationSound = async () => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.replayAsync();
+      }
+    } catch (error) {
+      console.error('Failed to play sound:', error);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
       const res = await databases.listDocuments(DATABASE_ID, NOTIFICATIONS_COLLECTION, [
         Query.orderDesc('$createdAt'),
       ]);
+
       const newNotifications = res.documents.filter((doc) => !doc.isRead);
 
       if (newNotifications.length > previousCount) {
         playNotificationSound();
-        sendLocalNotification('New Notification', 'You have a new admin message.');
+        sendLocalNotification('New Notification', 'You have a new user message.');
       }
-
 
       setNotifications(newNotifications);
       setPreviousCount(newNotifications.length);
@@ -75,16 +103,9 @@ const AdminNotificationPage = () => {
     }
   };
 
-  const playNotificationSound = async () => {
-    try {
-      if (soundRef.current) {
-        await soundRef.current.replayAsync();
-      }
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.log('Error playing sound', error);
-    }
-  };
+  
+
+  
 
   const markAsRead = async (id: string) => {
     try {

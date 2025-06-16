@@ -8,6 +8,8 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
+  AppState,
+  AppStateStatus,
   Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -39,9 +41,12 @@ const UserNotificationPage = () => {
   const [previousCount, setPreviousCount] = useState(0);
   const [userEmail, setUserEmail] = useState('');
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
 
-  // Load local sound
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const appState = useRef(AppState.currentState);
+
+  // Load sound
   useEffect(() => {
     const loadSound = async () => {
       const { sound } = await Audio.Sound.createAsync(
@@ -58,7 +63,7 @@ const UserNotificationPage = () => {
     };
   }, []);
 
-  // Register for push notifications
+  // Push notification registration
   const registerForPushNotificationsAsync = async (): Promise<string | null> => {
     try {
       if (!Device.isDevice) {
@@ -87,7 +92,6 @@ const UserNotificationPage = () => {
     }
   };
 
-  // Save token to Appwrite
   const savePushToken = async (email: string, token: string) => {
     try {
       const existing = await databases.listDocuments(DATABASE_ID, NOTIFICATIONS_COLLECTION, [
@@ -111,7 +115,6 @@ const UserNotificationPage = () => {
     }
   };
 
-  // Init on mount
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -122,7 +125,6 @@ const UserNotificationPage = () => {
         const user = await account.get();
         setUserEmail(user.email);
         await savePushToken(user.email, token);
-        await fetchNotifications(user.email);
       } catch (error) {
         Alert.alert('Init error', 'Could not initialize notifications.');
       }
@@ -130,13 +132,33 @@ const UserNotificationPage = () => {
 
     initialize();
 
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
+    const subscription = Notifications.addNotificationReceivedListener((notification) => {
       console.log('Notification received:', notification);
       playNotificationSound();
     });
 
     return () => subscription.remove();
   }, []);
+
+  // Start polling
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      appState.current = nextAppState;
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+    intervalRef.current = setInterval(() => {
+      if (appState.current === 'active' && userEmail) {
+        fetchNotifications(userEmail);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => {
+      appStateSubscription.remove();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [userEmail]);
 
   const playNotificationSound = async () => {
     try {
@@ -147,6 +169,20 @@ const UserNotificationPage = () => {
     }
   };
 
+  const sendLocalPushNotification = async () => {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'New Notification',
+          body: 'You have a new message.',
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.error('Local push error:', error);
+    }
+  };
+
   const fetchNotifications = async (email: string) => {
     try {
       const res = await databases.listDocuments(DATABASE_ID, NOTIFICATIONS_COLLECTION, [
@@ -154,8 +190,12 @@ const UserNotificationPage = () => {
         Query.equal('isDeviceToken', false),
         Query.orderDesc('$createdAt'),
       ]);
-      const newItems = res.documents.filter(doc => !doc.isRead);
-      if (newItems.length > previousCount) playNotificationSound();
+
+      const newItems = res.documents.filter((doc) => !doc.isRead);
+      if (newItems.length > previousCount) {
+        playNotificationSound();
+        sendLocalPushNotification();
+      }
       setNotifications(newItems);
       setPreviousCount(newItems.length);
     } catch {
@@ -185,7 +225,7 @@ const UserNotificationPage = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            const deletions = notifications.map(n =>
+            const deletions = notifications.map((n) =>
               databases.deleteDocument(DATABASE_ID, NOTIFICATIONS_COLLECTION, n.$id)
             );
             await Promise.all(deletions);
@@ -250,7 +290,7 @@ const UserNotificationPage = () => {
           <FlatList
             scrollEnabled={false}
             data={notifications}
-            keyExtractor={item => item.$id}
+            keyExtractor={(item) => item.$id}
             renderItem={renderItem}
             contentContainerStyle={styles.listContainer}
           />

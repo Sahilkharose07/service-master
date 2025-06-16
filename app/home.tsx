@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Dimensions, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { AntDesign, MaterialIcons, Feather } from '@expo/vector-icons';
 import { account, databases } from '../lib/appwrite';
-import { RefreshControl } from 'react-native';
 import { Query } from 'react-native-appwrite';
 import { styles } from '../constants/HomeScreen.styles';
 import { footerStyles } from '../constants/footer';
@@ -30,10 +29,7 @@ const AdminHomeScreen = () => {
       'Logout',
       'Are you sure you want to logout?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Logout',
           style: 'destructive',
@@ -44,8 +40,8 @@ const AdminHomeScreen = () => {
             } catch (error) {
               Alert.alert('Error', 'Failed to logout');
             }
-          },
-        },
+          }
+        }
       ],
       { cancelable: true }
     );
@@ -59,18 +55,12 @@ const AdminHomeScreen = () => {
       const dailyBills = await databases.listDocuments(
         DATABASE_ID,
         COLLECTION_ID,
-        [
-          Query.greaterThanEqual('date', startOfDay),
-          Query.orderDesc('date')
-        ]
+        [Query.greaterThanEqual('date', startOfDay), Query.orderDesc('date')]
       );
       const monthlyBills = await databases.listDocuments(
         DATABASE_ID,
         COLLECTION_ID,
-        [
-          Query.greaterThanEqual('date', startOfMonth),
-          Query.orderDesc('date')
-        ]
+        [Query.greaterThanEqual('date', startOfMonth), Query.orderDesc('date')]
       );
       const dailyTotal = dailyBills.documents.reduce((sum, bill) => sum + parseFloat(bill.total || 0), 0);
       const monthlyTotal = monthlyBills.documents.reduce((sum, bill) => sum + parseFloat(bill.total || 0), 0);
@@ -120,6 +110,10 @@ const AdminHomeScreen = () => {
     fetchAllData();
   }, []);
 
+  useEffect(() => {
+    fetchUnreadNotifications();
+  }, []);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchAllData().finally(() => setRefreshing(false));
@@ -143,6 +137,26 @@ const AdminHomeScreen = () => {
             onPress={() => router.push('/notification')}
           >
             <MaterialIcons name="notifications" size={24} color="#FFF" />
+            {unreadCount > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  backgroundColor: 'red',
+                  borderRadius: 8,
+                  paddingHorizontal: 4,
+                  paddingVertical: 1,
+                  minWidth: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -209,6 +223,7 @@ const AdminHomeScreen = () => {
               <AntDesign name="right" size={16} color="#5E72E4" />
             </TouchableOpacity>
           </View>
+
           <View style={[styles.serviceCard, styles.completedCard]}>
             <View style={styles.serviceCardHeader}>
               <View style={[styles.serviceIconContainer, { backgroundColor: '#C6F6D5' }]}>
@@ -229,49 +244,35 @@ const AdminHomeScreen = () => {
       </ScrollView>
 
       <View style={[footerStyles.bottomBar, { paddingBottom: insets.bottom || 20, marginTop: 40 }]}>
-        <TouchableOpacity
-          style={footerStyles.bottomButton}
-          onPress={() => router.push('/service')}
-        >
+        <TouchableOpacity style={footerStyles.bottomButton} onPress={() => router.push('/service')}>
           <View style={footerStyles.bottomButtonIcon}>
             <MaterialIcons name="car-repair" size={20} color="#5E72E4" />
           </View>
           <Text style={footerStyles.bottomButtonText}>Service</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={footerStyles.bottomButton}
-          onPress={() => router.push('/user')}
-        >
+        <TouchableOpacity style={footerStyles.bottomButton} onPress={() => router.push('/user')}>
           <View style={footerStyles.bottomButtonIcon}>
             <MaterialIcons name="person" size={20} color="#5E72E4" />
           </View>
           <Text style={footerStyles.bottomButtonText}>Users</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[footerStyles.bottomButton, footerStyles.bottomButtonActive]}
-        >
+        <TouchableOpacity style={[footerStyles.bottomButton, footerStyles.bottomButtonActive]}>
           <View style={[footerStyles.bottomButtonIcon, footerStyles.bottomButtonIconActive]}>
             <Feather name="home" size={20} color="#FFF" />
           </View>
           <Text style={[footerStyles.bottomButtonText, footerStyles.bottomButtonTextActive]}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={footerStyles.bottomButton}
-          onPress={() => router.push('/userphotos')}
-        >
+        <TouchableOpacity style={footerStyles.bottomButton} onPress={() => router.push('/userphotos')}>
           <View style={footerStyles.bottomButtonIcon}>
             <MaterialIcons name="photo-library" size={20} color="#5E72E4" />
           </View>
           <Text style={footerStyles.bottomButtonText}>Photos</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={footerStyles.bottomButton}
-          onPress={() => router.push('/bill')}
-        >
+        <TouchableOpacity style={footerStyles.bottomButton} onPress={() => router.push('/bill')}>
           <View style={footerStyles.bottomButtonIcon}>
             <Feather name="file-text" size={20} color="#5E72E4" />
           </View>
@@ -281,4 +282,5 @@ const AdminHomeScreen = () => {
     </SafeAreaView>
   );
 };
+
 export default AdminHomeScreen;

@@ -8,6 +8,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, isSameDay } from 'date-fns';
 import { Linking } from 'react-native';
 import { styles } from '../constants/PendingServicesScreen.styles';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 const DATABASE_ID = '681c428b00159abb5e8b';
 const COLLECTION_ID = '681d92600018a87c1478';
@@ -48,6 +50,30 @@ const PendingServicesScreen = () => {
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [filterType, setFilterType] = useState<'serviceBoy' | 'date'>('serviceBoy');
+
+
+  const setupNotificationChannel = async () => {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+};
+
+const sendLocalNotification = async (title: string, body: string) => {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      sound: 'default',
+    },
+    trigger: null, // immediate
+  });
+};
 
   const fetchServiceBoys = async () => {
     try {
@@ -117,10 +143,12 @@ const PendingServicesScreen = () => {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     fetchServices();
     fetchServiceBoys();
+   setupNotificationChannel();
     if (params.newService) {
       try {
         const newService = JSON.parse(params.newService as string);

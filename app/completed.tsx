@@ -297,10 +297,8 @@ const AdminCompletedServicesScreen = () => {
           <Text style={styles.detailText}>{item.clientName}</Text>
         </View>
         <View style={styles.detailRow}>
-          <MaterialIcons name="location-on" size={18} color="#718096" />
-          <Text style={styles.detailText}>
-            {item.address}
-          </Text>
+                   <MaterialIcons name="location-on" size={18} color="#718096" />
+          <Text style={styles.detailText}>{item.address}</Text>
         </View>
         <View style={styles.detailRow}>
           <MaterialIcons name="phone" size={18} color="#718096" />
@@ -322,9 +320,7 @@ const AdminCompletedServicesScreen = () => {
               : 'Completion time not available'}
           </Text>
         </View>
-        <Text style={styles.serviceBoyText}>
-          {item.serviceBoy}
-        </Text>
+        <Text style={styles.serviceBoyText}>{item.serviceBoy}</Text>
       </View>
       <View style={styles.actionButtons}>
         <TouchableOpacity
@@ -470,8 +466,7 @@ const AdminCompletedServicesScreen = () => {
               ? `No completed services for ${selectedServiceBoy}`
               : dateFilter
                 ? `No services completed on ${format(dateFilter, 'MMMM d, yyyy')}`
-                : 'No completed services'
-            }
+                : 'No completed services'}
           </Text>
         </View>
       )}
@@ -480,3 +475,5 @@ const AdminCompletedServicesScreen = () => {
 };
 
 export default AdminCompletedServicesScreen;
+
+ 
