@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "service_vale",
-    "slug": "service_vale",
+    "slug": "service-vala",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -17,10 +17,6 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.service.servicevale",
-
-      
-    
-
       "intentFilters": [
         {
           "action": "VIEW",
@@ -31,7 +27,10 @@
               "pathPrefix": "/v1/recovery"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -58,8 +57,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f1cd4290-487c-41c9-b586-e036942312e9"
+        "projectId": "dff2c2c7-5dd4-45e9-bb42-13e21e703aa2"
       }
-    }
+    },
+    "owner": "sahilmk"
   }
 }
