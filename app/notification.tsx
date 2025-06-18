@@ -26,10 +26,11 @@ const NOTIFICATIONS_COLLECTION = 'admin_id';
 const AdminNotificationPage = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [previousCount, setPreviousCount] = useState(0);
+  const [seenNotificationIds, setSeenNotificationIds] = useState<Set<string>>(new Set());
   const soundRef = useRef<Audio.Sound | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef(AppState.currentState);
+  const [previousCount, setPreviousCount] = useState(0);
 
   useEffect(() => {
     configurePushNotifications();
@@ -38,7 +39,6 @@ const AdminNotificationPage = () => {
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-    // Start polling every 15 seconds
     intervalRef.current = setInterval(() => {
       if (appState.current === 'active') {
         fetchNotifications();
@@ -63,7 +63,7 @@ const AdminNotificationPage = () => {
   const loadSound = async () => {
     try {
       const { sound } = await Audio.Sound.createAsync(
-        require('../assets/notification.mp3') 
+        require('../assets/sounds/notification.mp3')
       );
       soundRef.current = sound;
     } catch (error) {
@@ -88,14 +88,24 @@ const AdminNotificationPage = () => {
       ]);
 
       const newNotifications = res.documents.filter((doc) => !doc.isRead);
+      const currentIds = new Set(newNotifications.map((doc) => doc.$id));
 
-      if (newNotifications.length > previousCount) {
-        playNotificationSound();
-        sendLocalNotification('New Notification', 'You have a new user message.');
+      const unseen = newNotifications.filter((doc) => !seenNotificationIds.has(doc.$id));
+
+      if (unseen.length > 0) {
+        await playNotificationSound();
+        await sendLocalNotification('New Notification', 'You have a new user message.');
+
+        setSeenNotificationIds((prev) => new Set([...prev, ...unseen.map(doc => doc.$id)]));
+
+        
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
       }
 
       setNotifications(newNotifications);
-      setPreviousCount(newNotifications.length);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch notifications');
     } finally {
@@ -103,9 +113,7 @@ const AdminNotificationPage = () => {
     }
   };
 
-  
 
-  
 
   const markAsRead = async (id: string) => {
     try {
@@ -145,10 +153,6 @@ const AdminNotificationPage = () => {
     setRefreshing(true);
     fetchNotifications();
   };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.notificationCard}>

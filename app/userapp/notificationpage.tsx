@@ -46,7 +46,7 @@ const UserNotificationPage = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef(AppState.currentState);
 
-  // Load sound
+  // Load notification sound
   useEffect(() => {
     const loadSound = async () => {
       const { sound } = await Audio.Sound.createAsync(
@@ -57,13 +57,11 @@ const UserNotificationPage = () => {
     loadSound();
 
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-      }
+      if (soundRef.current) soundRef.current.unloadAsync();
     };
   }, []);
 
-  // Push notification registration
+  // Push token registration
   const registerForPushNotificationsAsync = async (): Promise<string | null> => {
     try {
       if (!Device.isDevice) {
@@ -140,7 +138,7 @@ const UserNotificationPage = () => {
     return () => subscription.remove();
   }, []);
 
-  // Start polling
+  // Polling setup
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       appState.current = nextAppState;
@@ -152,7 +150,7 @@ const UserNotificationPage = () => {
       if (appState.current === 'active' && userEmail) {
         fetchNotifications(userEmail);
       }
-    }, 3000); // Poll every 3 seconds
+    }, 10000); // 🛠️ 10 seconds polling interval
 
     return () => {
       appStateSubscription.remove();
@@ -192,10 +190,17 @@ const UserNotificationPage = () => {
       ]);
 
       const newItems = res.documents.filter((doc) => !doc.isRead);
+
       if (newItems.length > previousCount) {
-        playNotificationSound();
-        sendLocalPushNotification();
+        await playNotificationSound();
+        await sendLocalPushNotification();
+
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
       }
+
       setNotifications(newItems);
       setPreviousCount(newItems.length);
     } catch {

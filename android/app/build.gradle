@@ -174,4 +174,18 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // ✅ Force only AndroidX, prevent old support libs
+    implementation 'androidx.core:core:1.13.1'
+
+    // ✅ Optional: Force resolution in case a lib pulls old support libs
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.core:core:1.13.1'
+            // ✨ optionally exclude known bad ones
+            exclude group: 'com.android.support', module: 'support-compat'
+            exclude group: 'com.android.support'
+        }
+    }
 }
+

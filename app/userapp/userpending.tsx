@@ -7,7 +7,6 @@ import { ID, Query } from 'appwrite';
 import { styles } from '../../constants/userapp/PendingServicesScreenuser.styles';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, isSameDay } from 'date-fns';
-import PushNotification from 'react-native-push-notification';
 
 
 const DATABASE_ID = '681c428b00159abb5e8b';
@@ -211,16 +210,6 @@ const PendingServicesScreenUser = () => {
               } catch (notificationError) {
                 console.warn('Notification failed (service still completed):', notificationError);
               }
-
-
-              PushNotification.localNotification({
-                channelId: 'default-channel-id', 
-                title: 'Service Completed',
-                message: 'A service has been completed. Tap to view in admin panel.',
-                playSound: true,
-                soundName: 'default',
-                vibrate: true,
-              });
 
               setServices(prev => prev.filter(service => service.id !== id));
               setAllServices(prev => prev.filter(service => service.id !== id));

@@ -1,11 +1,11 @@
-// lib/notificationListener.ts
+
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { databases } from './appwrite';
 import { Query } from 'appwrite';
 import { useEffect } from 'react';
 
-// Replace with your actual Appwrite database and collection IDs
+
 const DATABASE_ID = '681c428b00159abb5e8b';
 const NOTIFICATIONS_COLLECTION_ID = 'note_id';
 
